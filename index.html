@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f9f9f8;--surface:#ffffff;--surface2:#f4f4f2;--border:rgba(0,0,0,.07);--border-md:rgba(0,0,0,.11);
+  --text-1:#0f0f0e;--text-2:#6b6b67;--text-3:#9d9d99;
+  --blue:#be0028;--blue-bg:#fdf0f3;--blue-border:#f4c5cf;--blue-dark:#8a001d;
+  --green:#16a34a;--green-bg:#f0fdf4;--amber:#d97706;--amber-bg:#fffbeb;
+  --red:#dc2626;--red-bg:#fef2f2;--purple:#7c3aed;--purple-bg:#f5f3ff;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.06),0 2px 4px rgba(0,0,0,.04);
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text-1);font-size:13.5px;-webkit-font-smoothing:antialiased}
+
+.hdr{background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:22px;height:22px;background:var(--blue);border-radius:6px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(190,0,40,.25)}
+.hdr-logo svg{width:12px;height:12px;fill:#fff}
+.hdr-title{font-size:13.5px;font-weight:600;letter-spacing:-.01em}
+.hdr-sep{width:1px;height:16px;background:var(--border-md);margin:0 4px}
+.hdr-sub{font-size:12px;color:var(--text-2)}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.hdr-time{font-size:11.5px;color:var(--text-3)}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px #dcfce7}
+
+/* KPI — 3 cards only */
+.kpi-wrap{padding:20px 28px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow);transition:box-shadow .15s,transform .15s;cursor:default;}
+.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text-2);letter-spacing:.03em;text-transform:uppercase;margin-bottom:8px}
+.kpi-val{font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text-3);margin-top:5px}
+.kpi-sub b{font-weight:500}
+.kpi.ok .kpi-val{color:var(--green)}
+.kpi.done-kpi .kpi-val{color:var(--purple)}
+.trend{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:500;padding:2px 6px;border-radius:99px;margin-top:5px}
+.trend.up{background:var(--green-bg);color:var(--green)}
+
+.tab-bar{display:flex;align-items:center;gap:2px;padding:16px 28px 0;border-bottom:1px solid var(--border);background:transparent}
+.tab{padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;border-radius:7px 7px 0 0;color:var(--text-2);border-bottom:2px solid transparent;transition:color .15s;margin-bottom:-1px}
+.tab:hover{color:var(--text-1)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+.content{padding:20px 28px 32px}
+.panel{display:none;animation:fadeIn .2s ease}.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.row{display:grid;gap:12px;margin-bottom:12px}
+.row.halves{grid-template-columns:1fr 1fr}
+.row.thirds{grid-template-columns:1fr 1fr 1fr}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow)}
+.card-label{font-size:11px;font-weight:600;color:var(--text-2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:14px}
+.card-sub{font-size:11.5px;color:var(--text-3);margin-bottom:14px}
+canvas{display:block;width:100%!important}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.legend span{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-2)}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.badge.fin{background:var(--blue-bg);color:var(--blue)}.badge.fin::before{background:var(--blue)}
+.badge.legal{background:var(--green-bg);color:var(--green)}.badge.legal::before{background:var(--green)}
+.badge.ret{background:var(--red-bg);color:var(--red)}.badge.ret::before{background:var(--red)}
+.badge.done{background:var(--purple-bg);color:var(--purple)}.badge.done::before{background:var(--purple)}
+.badge.pend{background:var(--amber-bg);color:var(--amber)}.badge.pend::before{background:var(--amber)}
+
+.tbl-wrap{overflow:hidden;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:11px;font-weight:600;color:var(--text-2);letter-spacing:.04em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:10px 14px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .1s}
+tbody tr:hover td{background:var(--surface2)}
+
+.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-row select,.filter-row input{padding:6px 10px;border:1px solid var(--border-md);border-radius:7px;font-size:12.5px;font-family:inherit;background:var(--surface);color:var(--text-1);outline:none;transition:border-color .15s;}
+.filter-row select:focus,.filter-row input:focus{border-color:var(--blue)}
+
+.risk-list{display:flex;flex-direction:column;gap:6px}
+.risk-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);transition:box-shadow .15s;}
+.risk-item:hover{box-shadow:var(--shadow-md)}
+.risk-item.high{border-left:3px solid var(--red)}
+.risk-item.mid{border-left:3px solid var(--amber)}
+.ri-name{font-size:13px;font-weight:500}.ri-meta{font-size:11px;color:var(--text-3);margin-top:2px}
+.rtag{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:500;white-space:nowrap}
+.rtag.exp{background:var(--red-bg);color:var(--red)}
+.rtag.stale{background:var(--amber-bg);color:var(--amber)}
+.slabel{font-size:11px;font-weight:600;color:var(--text-2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px;margin-top:14px}
+.slabel:first-child{margin-top:0}
+
+.search-wrap{margin:16px 28px 28px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);overflow:hidden;}
+.search-hdr{padding:18px 22px 16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fafafa 0%,#f4f4f2 100%);}
+.search-hdr h2{font-size:13.5px;font-weight:600;letter-spacing:-.01em;margin-bottom:3px}
+.search-hdr p{font-size:11.5px;color:var(--text-3)}
+.search-body{padding:18px 22px}
+.search-row{display:flex;gap:8px;align-items:center}
+.search-row input{width:300px;padding:9px 14px;border:1px solid var(--border-md);border-radius:8px;font-size:13.5px;font-family:inherit;background:var(--surface);color:var(--text-1);outline:none;transition:border-color .15s,box-shadow .15s;}
+.search-row input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(190,0,40,.1)}
+.search-row input::placeholder{color:var(--text-3)}
+.search-row button{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;background:var(--blue);color:#fff;border:none;cursor:pointer;transition:background .15s,transform .1s;box-shadow:0 1px 2px rgba(190,0,40,.2);}
+.search-row button:hover{background:var(--blue-dark)}
+.search-row button:active{transform:scale(.98)}
+.search-hint{font-size:11px;color:var(--text-3);margin-top:8px}
+.not-found{font-size:13px;color:var(--text-2);padding:16px 0}
+
+.detail-box{display:none;margin-top:18px;border-top:1px solid var(--border);padding-top:18px}
+.d-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.d-id{font-size:11px;font-family:'SF Mono',monospace;color:var(--text-3);margin-bottom:4px;letter-spacing:.02em}
+.d-name{font-size:18px;font-weight:600;letter-spacing:-.02em}
+.d-meta{font-size:12px;color:var(--text-2);margin-top:3px}
+
+.d-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.dg{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.dg-l{font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.dg-v{font-size:13.5px;font-weight:600;letter-spacing:-.01em}
+.dg-v.pos{color:var(--green)}
+
+.d-desc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;font-size:13px;line-height:1.65;margin-bottom:12px}
+.d-desc .dl{font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+
+.file-card{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);margin-bottom:14px;}
+.file-lhs{display:flex;align-items:center;gap:10px}
+.file-ico{width:34px;height:34px;border-radius:8px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;font-size:17px}
+.file-name{font-size:13px;font-weight:500}
+.file-meta{font-size:11px;color:var(--text-3);margin-top:1px}
+.dl-btn{padding:6px 13px;border:1px solid var(--border-md);border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text-1);font-family:inherit;transition:border-color .15s}
+.dl-btn:hover{border-color:var(--text-1)}
+
+.flow-toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text-2);cursor:pointer;padding:6px 0;margin-bottom:8px;user-select:none;transition:color .15s;}
+.flow-toggle:hover{color:var(--text-1)}
+.ft-arrow{font-size:9px;transition:transform .2s;display:inline-block}
+.flow-toggle.open .ft-arrow{transform:rotate(90deg)}
+.pipeline{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.pipeline.open{max-height:420px}
+
+.fail-msg{margin-top:10px;padding:9px 13px;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;font-size:12px;color:var(--red);line-height:1.5}
+.fail-msg strong{font-weight:600}
+
+/* approval */
+.approval-bar{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-top:4px;border:1px solid var(--blue-border);border-radius:10px;background:linear-gradient(135deg,#fdf0f3 0%,#fef5f7 100%);}
+.al-info{flex:1}
+.al-title{font-size:13px;font-weight:600;color:var(--blue-dark)}
+.al-sub{font-size:11.5px;color:var(--blue);margin-top:2px;opacity:.85}
+.approval-select-wrap{position:relative}
+.approval-select{appearance:none;-webkit-appearance:none;padding:9px 36px 9px 16px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;background:var(--surface) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23be0028' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='2 4 6 8 10 4'/%3e%3c/svg%3e") no-repeat right 12px center;color:var(--blue-dark);border:1px solid var(--blue-border);cursor:pointer;outline:none;min-width:170px;transition:border-color .15s,box-shadow .15s;}
+.approval-select:hover{border-color:var(--blue)}
+.approval-select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(190,0,40,.12)}
+.confirm-pass{display:none;margin-top:10px;padding:14px 16px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:1px solid #86efac;border-radius:10px;}
+.ra-pass{padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;border:none;background:#16a34a;color:#fff;transition:background .15s}
+.ra-pass:hover{background:#15803d}
+.reject-area{display:none;margin-top:10px}
+.reject-area textarea{width:100%;padding:10px 12px;border:1px solid var(--border-md);border-radius:8px;font-size:13px;font-family:inherit;resize:none;background:var(--surface);color:var(--text-1);outline:none;transition:border-color .15s;}
+.reject-area textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.06)}
+.ra-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.ra-cancel{padding:7px 14px;border-radius:7px;font-size:12px;font-family:inherit;cursor:pointer;border:1px solid var(--border-md);background:transparent;color:var(--text-1)}
+.ra-confirm{padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;border:none;background:var(--red);color:#fff}
+.ra-confirm:hover{background:#b91c1c}
+
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(8px);padding:11px 20px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.15);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.pass{background:#15803d;color:#fff}
+.toast.reject{background:#dc2626;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">
+      <svg viewBox="0 0 12 12"><rect x="1" y="1" width="4" height="4" rx="1"/><rect x="7" y="1" width="4" height="4" rx="1"/><rect x="1" y="7" width="4" height="4" rx="1"/><rect x="7" y="7" width="4" height="4" rx="1"/></svg>
+    </div>
+    <span class="hdr-title">ContractOps</span>
+    <div class="hdr-sep"></div>
+    <span class="hdr-sub">Legal Team Dashboard</span>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-time">最後同步 09:00</span>
+    <div class="hdr-dot"></div>
+  </div>
+</div>
+
+<!-- KPI — 3 cards -->
+<div class="kpi-wrap">
+  <div class="kpi">
+    <div class="kpi-label">合約總數</div>
+    <div class="kpi-val">148</div>
+    <div class="kpi-sub">本季新增 <b>23</b> 件</div>
+    <div class="trend up">↑ 12% vs 上季</div>
+  </div>
+  <div class="kpi ok">
+    <div class="kpi-label">進行中</div>
+    <div class="kpi-val">89</div>
+    <div class="kpi-sub">正常審核中</div>
+    <div class="trend up">↑ 8 件 vs 上月</div>
+  </div>
+  <div class="kpi done-kpi">
+    <div class="kpi-label">已完成</div>
+    <div class="kpi-val">47</div>
+    <div class="kpi-sub">本季結案</div>
+    <div class="trend up" style="background:var(--purple-bg);color:var(--purple)">↑ 5 件 vs 上季</div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab(0)">狀態審核</div>
+  <div class="tab" onclick="switchTab(1)">合約清單</div>
+  <div class="tab" onclick="switchTab(2)">時間分析</div>
+  <div class="tab" onclick="switchTab(3)">風險警示</div>
+</div>
+
+<div class="content">
+
+<!-- Tab 0 -->
+<div class="panel active" id="p0">
+  <div class="row halves">
+    <div class="card">
+      <div class="card-label">合約狀態分布</div>
+      <div class="card-sub">點擊區塊切換右側 BU 明細</div>
+      <div style="max-width:210px;margin:0 auto;position:relative;height:210px">
+        <canvas id="donutChart" height="210"></canvas>
+        <div id="donut-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+          <div style="font-size:24px;font-weight:600;letter-spacing:-.03em" id="dc-val">70</div>
+          <div style="font-size:11px;color:var(--text-3)" id="dc-lbl">審核中</div>
+        </div>
+      </div>
+      <div class="legend" style="justify-content:center">
+        <span><i style="background:#be0028"></i>財務審閱 38</span>
+        <span><i style="background:#16a34a"></i>法務審閱 32</span>
+        <span><i style="background:#dc2626"></i>退回 7</span>
+        <span><i style="background:#d97706"></i>待簽核 24</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label" id="bu-title">各 BU 件數 — 財務審閱中</div>
+      <div style="position:relative;height:260px"><canvas id="buChart" height="260"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 1 -->
+<div class="panel" id="p1">
+  <div class="filter-row">
+    <select id="f-bu" onchange="renderTable()"><option value="">所有 BU</option><option>業務發展部</option><option>供應鏈部</option><option>快速消費品部</option><option>特殊原物料部門</option><option>科技事業部</option><option>醫療事業部</option></select>
+    <select id="f-status" onchange="renderTable()"><option value="">所有狀態</option><option>財務審閱中</option><option>法務審閱中</option><option>退回</option><option>已完成</option><option>待簽核</option></select>
+    <select id="f-type" onchange="renderTable()"><option value="">所有類型</option><option>採購合約</option><option>服務合約</option><option>NDA</option><option>授權合約</option><option>合作協議</option></select>
+    <input type="text" id="f-kw" placeholder="搜尋合約名稱…" oninput="renderTable()" style="flex:1;min-width:160px">
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>編號</th><th>合約名稱</th><th>業務單位</th><th>類型</th><th>狀態</th><th>對口廠商</th><th>到期日</th><th>剩餘天數</th></tr></thead>
+    <tbody id="contract-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- Tab 2 -->
+<div class="panel" id="p2">
+  <div class="row halves">
+    <div class="card"><div class="card-label">每月新增合約數</div><div style="position:relative;height:200px"><canvas id="lineChart" height="200"></canvas></div></div>
+    <div class="card"><div class="card-label">平均審核週期趨勢（天）</div><div style="position:relative;height:200px"><canvas id="avgLine" height="200"></canvas></div></div>
+  </div>
+  <div class="row thirds">
+    <div class="card"><div class="card-label">本季完成率</div><div style="position:relative;height:160px"><canvas id="compChart" height="160"></canvas></div></div>
+    <div class="card"><div class="card-label">退回原因分布</div><div style="position:relative;height:160px"><canvas id="retChart" height="160"></canvas></div></div>
+    <div class="card"><div class="card-label">各 BU 平均天數</div><div style="position:relative;height:160px"><canvas id="buAvgChart" height="160"></canvas></div></div>
+  </div>
+</div>
+
+<!-- Tab 3 -->
+<div class="panel" id="p3">
+  <div class="row halves">
+    <div>
+      <div class="slabel">退回次數過多（≥ 2次）</div>
+      <div class="risk-list">
+        <div class="risk-item high"><div><div class="ri-name">跨境電商合作協議</div><div class="ri-meta">業務發展部 · 退回原因：條款不完整、金額異常</div></div><span class="rtag exp">退回 3次</span></div>
+        <div class="risk-item mid"><div><div class="ri-name">IT 外包維護合約</div><div class="ri-meta">IT 部門 · 退回原因：附件缺漏</div></div><span class="rtag stale">退回 2次</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="slabel">長時間停滯（超過14天）</div>
+      <div class="risk-list">
+        <div class="risk-item high"><div><div class="ri-name">原物料採購框架協議</div><div class="ri-meta">供應鏈部 · 停滯於 財務審閱中</div></div><span class="rtag exp">停滯 28天</span></div>
+        <div class="risk-item high"><div><div class="ri-name">軟體授權合約 — SAP</div><div class="ri-meta">IT 部門 · 停滯於 法務審閱中</div></div><span class="rtag exp">停滯 21天</span></div>
+        <div class="risk-item mid"><div><div class="ri-name">廣告代理服務合約</div><div class="ri-meta">行銷部 · 停滯於 待簽核</div></div><span class="rtag stale">停滯 17天</span></div>
+        <div class="risk-item mid"><div><div class="ri-name">倉儲租賃合約</div><div class="ri-meta">供應鏈部 · 停滯於 財務審閱中</div></div><span class="rtag stale">停滯 15天</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Search -->
+<div class="search-wrap">
+  <div class="search-hdr">
+    <h2>合約單號查詢</h2>
+    <p>輸入合約編號快速查看摘要、審核流程及簽核操作</p>
+  </div>
+  <div class="search-body">
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="CT-2025-003" onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()">查詢</button>
+    </div>
+    <div class="search-hint">001 雙邊審閱中 · 002 財務過/法務審中 · 003 待部門負責人簽核 · 004 全部完成 · 005 財務feedback · 006 雙邊feedback · 007 財務過/法務feedback · 010 財務退回 · 011 法務退回 · 012 雙邊退回</div>
+    <div class="not-found" id="not-found" style="display:none">找不到此合約編號，請確認後重新輸入。</div>
+    <div class="detail-box" id="detail-box"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+const txtColor='#6b6b67', gridColor='rgba(0,0,0,.05)';
+Chart.defaults.font.family="'Inter',system-ui,sans-serif";
+Chart.defaults.font.size=11.5; Chart.defaults.color=txtColor;
+
+// Gradient helpers
+function makeGrad(ctx, color1, color2, vertical=true){
+  const g = vertical
+    ? ctx.createLinearGradient(0,0,0,300)
+    : ctx.createLinearGradient(0,0,300,0);
+  g.addColorStop(0, color1);
+  g.addColorStop(1, color2);
+  return g;
+}
+
+function switchTab(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
+  document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('active',i===j));
+}
+
+// Donut — gradient via canvas arc (use color stops as segment colors)
+const dData={
+  labels:['財務審閱中','法務審閱中','退回','待簽核'],
+  data:[38,32,7,24],
+  colors:['#be0028','#16a34a','#dc2626','#d97706'],
+  gradEnd:['#ff6b8a','#4ade80','#f87171','#fbbf24']
+};
+const buData={'財務審閱中':[10,7,8,6,5,2],'法務審閱中':[8,6,7,5,4,2],'退回':[2,2,1,1,1,0],'待簽核':[7,5,4,4,3,1]};
+const buLabels=['業務發展部','供應鏈部','快速消費品部','特殊原物料部門','科技事業部','醫療事業部'];
+let buChartInst=null;
+
+function buildBU(status,idx){
+  const ctx=document.getElementById('buChart');
+  if(buChartInst)buChartInst.destroy();
+  const c1=dData.colors[idx], c2=dData.gradEnd[idx];
+  buChartInst=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:buLabels,
+      datasets:[{
+        data:buData[status],
+        backgroundColor:(ctx2)=>{
+          const g=ctx2.chart.ctx.createLinearGradient(0,0,0,240);
+          g.addColorStop(0,c1+'cc');g.addColorStop(1,c2+'44');
+          return g;
+        },
+        borderColor:c1,borderWidth:1.5,borderRadius:6,borderSkipped:false
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false},ticks:{color:txtColor}},y:{grid:{color:gridColor},ticks:{color:txtColor,stepSize:4}}}}
+  });
+  document.getElementById('bu-title').textContent='各 BU 件數 — '+status;
+}
+buildBU('財務審閱中',0);
+
+new Chart(document.getElementById('donutChart'),{
+  type:'doughnut',
+  data:{labels:dData.labels,datasets:[{
+    data:dData.data,
+    backgroundColor:dData.colors.map(c=>c+'33'),
+    borderColor:dData.colors,
+    hoverBackgroundColor:dData.gradEnd.map(c=>c+'55'),
+    borderWidth:2,hoverOffset:6
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'64%',
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}：${c.raw} 件`}}},
+  onClick:(e,els)=>{if(!els.length)return;const i=els[0].index;
+    document.getElementById('dc-val').textContent=dData.data[i];
+    document.getElementById('dc-lbl').textContent=dData.labels[i];
+    buildBU(dData.labels[i],i);}
+}});
+
+// Time charts with gradients
+const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function gradientPlugin(color1,color2){
+  return {
+    id:'bgGrad',
+    beforeDraw(chart){
+      const {ctx,chartArea:{top,bottom}}=chart;
+      const g=ctx.createLinearGradient(0,top,0,bottom);
+      g.addColorStop(0,color1);g.addColorStop(1,color2);
+      chart.data.datasets[0].backgroundColor=g;
+    }
+  };
+}
+
+new Chart('lineChart',{
+  type:'line',
+  data:{labels:months,datasets:[{data:[10,13,9,15,18,14,20,17,22,19,16,23],borderColor:'#be0028',backgroundColor:'transparent',fill:true,tension:.4,pointRadius:2.5,pointBackgroundColor:'#be0028'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:txtColor}},y:{grid:{color:gridColor},ticks:{color:txtColor}}}},
+  plugins:[{
+    id:'areaGrad',
+    beforeDraw(chart){
+      const {ctx,chartArea:{top,bottom}}=chart;
+      if(!chart.chartArea)return;
+      const g=ctx.createLinearGradient(0,top,0,bottom);
+      g.addColorStop(0,'rgba(190,0,40,.18)');g.addColorStop(1,'rgba(190,0,40,.01)');
+      chart.data.datasets[0].backgroundColor=g;
+    }
+  }]
+});
+
+new Chart('avgLine',{
+  type:'line',
+  data:{labels:months,datasets:[{data:[38,42,35,40,36,33,30,28,32,29,27,25],borderColor:'#16a34a',backgroundColor:'transparent',fill:true,tension:.4,pointRadius:2.5,pointBackgroundColor:'#16a34a'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:txtColor}},y:{grid:{color:gridColor},ticks:{color:txtColor}}}},
+  plugins:[{
+    id:'areaGrad2',
+    beforeDraw(chart){
+      const {ctx,chartArea:{top,bottom}}=chart;
+      if(!chart.chartArea)return;
+      const g=ctx.createLinearGradient(0,top,0,bottom);
+      g.addColorStop(0,'rgba(22,163,74,.18)');g.addColorStop(1,'rgba(22,163,74,.01)');
+      chart.data.datasets[0].backgroundColor=g;
+    }
+  }]
+});
+
+new Chart('compChart',{
+  type:'doughnut',
+  data:{labels:['已完成','未完成'],datasets:[{
+    data:[68,32],
+    backgroundColor:['rgba(124,58,237,.25)','rgba(156,163,175,.2)'],
+    borderColor:['#7c3aed','rgba(156,163,175,.5)'],
+    borderWidth:2
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false}}}
+});
+
+new Chart('retChart',{
+  type:'pie',
+  data:{labels:['條款不完整','金額異常','附件缺漏','授權不足'],datasets:[{
+    data:[35,25,22,18],
+    backgroundColor:['rgba(220,38,38,.25)','rgba(217,119,6,.25)','rgba(124,58,237,.2)','rgba(156,163,175,.2)'],
+    borderColor:['#dc2626','#d97706','#7c3aed','#9ca3af'],
+    borderWidth:2
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+});
+
+new Chart('buAvgChart',{
+  type:'bar',
+  data:{
+    labels:['業發','供應鏈','快消','原料','科技','醫療'],
+    datasets:[{
+      data:[28,35,31,25,22,30],
+      backgroundColor:(ctx)=>{
+        const colors=[
+          ['#be0028','#ff6b8a'],['#16a34a','#4ade80'],['#7c3aed','#a78bfa'],
+          ['#d97706','#fbbf24'],['#dc2626','#f87171'],['#6b7280','#9ca3af']
+        ];
+        return ctx.dataIndex !== undefined
+          ? (() => {
+              const [c1,c2]=colors[ctx.dataIndex]||colors[0];
+              const g=ctx.chart.ctx.createLinearGradient(0,0,0,160);
+              g.addColorStop(0,c1+'cc');g.addColorStop(1,c2+'44');
+              return g;
+            })()
+          : '#be0028';
+      },
+      borderColor:['#be0028','#16a34a','#7c3aed','#d97706','#dc2626','#6b7280'],
+      borderWidth:1.5,borderRadius:6,borderSkipped:false
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+  scales:{x:{grid:{display:false},ticks:{color:txtColor}},y:{grid:{color:gridColor},ticks:{color:txtColor}}}}
+});
+
+// Contract data
+const contracts=[
+  {id:'CT-2025-001',name:'Microsoft Azure 服務合約',bu:'科技事業部',type:'服務合約',status:'財務審閱中',vendor:'Microsoft',due:'2025-06-18',days:7,margin:'18%',total:'NT$ 2,400,000',desc:'Microsoft Azure 雲端平台年度訂閱服務，涵蓋 IaaS 及 PaaS 服務，含 SLA 保證 99.9% 可用性。',payment:'Net 30，每季預付',shipterm:'線上服務交付，無運送條款',validity:'2025-06-18 至 2026-06-17',
+  pipeline:{fin:'active',legal:'active',mgr:'pending'},
+  file:{name:'Azure_Service_Contract_2025.pdf',size:'2.3 MB',updated:'2025-05-10'}},
+
+  {id:'CT-2025-002',name:'物流供應商採購合約',bu:'供應鏈部',type:'採購合約',status:'法務審閱中',vendor:'順豐供應鏈',due:'2025-06-22',days:11,margin:'22%',total:'NT$ 5,800,000',desc:'年度物流倉儲及配送服務採購，含末端配送 SLA、破損賠償條款及季度績效評估機制。',payment:'Net 45，月結',shipterm:'DDP 到指定倉庫',validity:'2025-07-01 至 2026-06-30',
+  pipeline:{fin:'done',legal:'active',mgr:'pending'},
+  file:{name:'Shunfeng_Logistics_Contract.pdf',size:'1.8 MB',updated:'2025-05-22'}},
+
+  {id:'CT-2025-003',name:'品牌授權合約 — 亞太',bu:'快速消費品部',type:'授權合約',status:'待簽核',vendor:'Brand Asia Ltd.',due:'2025-07-01',days:20,margin:'35%',total:'NT$ 1,200,000',desc:'品牌圖像及商標於亞太地區的非獨家授權使用，授權範圍含數位及實體媒體，不得轉授權。',payment:'簽約時一次性付清',shipterm:'不適用（智慧財產授權）',validity:'2025-07-01 至 2027-06-30',
+  pipeline:{fin:'done',legal:'done',mgr:'active'},
+  file:{name:'Brand_License_APAC_2025.pdf',size:'0.9 MB',updated:'2025-06-01'}},
+
+  {id:'CT-2025-004',name:'顧問服務合約 Q3',bu:'醫療事業部',type:'服務合約',status:'已完成',vendor:'德勤顧問',due:'2025-07-05',days:24,margin:'28%',total:'NT$ 3,500,000',desc:'Q3 醫療法規遵循專案顧問服務，含 GMP 流程審計、藥品許可證更新建議及合規程序優化，共 480 工時。',payment:'里程碑付款：簽約 30%、中期 40%、交付 30%',shipterm:'服務於台北辦公室交付',validity:'2025-07-01 至 2025-09-30',
+  pipeline:{fin:'done',legal:'done',mgr:'done'},
+  file:{name:'Deloitte_Consulting_Q3.pdf',size:'3.1 MB',updated:'2025-06-05'}},
+
+  {id:'CT-2025-005',name:'NDA — 新創合作方 B',bu:'業務發展部',type:'NDA',status:'財務審閱中',vendor:'新創方 B',due:'2025-07-08',days:27,margin:'N/A',total:'N/A',desc:'雙方就業務合作探索階段簽署保密協議，保密範圍含商業計畫、技術規格及客戶名單，期限兩年。',payment:'不適用',shipterm:'不適用',validity:'2025-07-08 至 2027-07-07',
+  pipeline:{fin:'feedback',legal:'active',mgr:'pending',finMsg:'請補充保密期限條款及賠償金額上限'},
+  file:{name:'NDA_Startup_B_2025.pdf',size:'0.4 MB',updated:'2025-06-08'}},
+
+  {id:'CT-2025-006',name:'原物料採購框架協議',bu:'特殊原物料部門',type:'採購合約',status:'財務審閱中',vendor:'台灣鋼鐵',due:'2025-08-15',days:65,margin:'19%',total:'NT$ 12,000,000',desc:'鋼材及鋁合金原物料年度框架採購協議，含季度調價機制、最低採購量保證及品質檢驗標準。',payment:'貨到後 Net 60',shipterm:'FOB 高雄港',validity:'2025-09-01 至 2026-08-31',
+  pipeline:{fin:'feedback',legal:'feedback',mgr:'pending',finMsg:'報價單版本不符，請附最新版',legalMsg:'第 12 條爭議管轄條款需重新議定'},
+  file:{name:'Steel_Framework_Agreement.pdf',size:'4.2 MB',updated:'2025-05-15'}},
+
+  {id:'CT-2025-007',name:'軟體授權合約 — SAP',bu:'科技事業部',type:'授權合約',status:'法務審閱中',vendor:'SAP Taiwan',due:'2025-09-01',days:82,margin:'21%',total:'NT$ 8,600,000',desc:'SAP S/4HANA 企業版授權及年度維護合約，含 500 Named User 授權、技術支援及版本升級保障。',payment:'年付，簽約後 30 天內',shipterm:'雲端部署交付',validity:'2025-10-01 至 2028-09-30',
+  pipeline:{fin:'done',legal:'feedback',mgr:'pending',legalMsg:'授權範圍需明確排除競業使用，請法務補充第 4.2 條'},
+  file:{name:'SAP_License_Contract_2025.pdf',size:'5.7 MB',updated:'2025-05-30'}},
+
+  {id:'CT-2025-008',name:'廣告代理服務合約',bu:'快速消費品部',type:'服務合約',status:'待簽核',vendor:'奧美廣告',due:'2025-08-20',days:70,margin:'32%',total:'NT$ 4,800,000',desc:'2025 下半年度整合行銷傳播代理服務，含數位廣告投放、創意製作及媒體規劃。',payment:'月付，每月前 5 個工作日',shipterm:'不適用',validity:'2025-08-01 至 2026-01-31',
+  pipeline:{fin:'done',legal:'done',mgr:'active'},
+  file:{name:'Ogilvy_Service_Contract_H2.pdf',size:'2.0 MB',updated:'2025-06-03'}},
+
+  {id:'CT-2025-009',name:'倉儲租賃合約',bu:'供應鏈部',type:'合作協議',status:'財務審閱中',vendor:'大倉儲股份',due:'2026-01-01',days:204,margin:'15%',total:'NT$ 6,000,000',desc:'林口物流中心 B 區倉儲空間租賃，面積 3,000 坪，含基本水電及裝卸月台使用，不含人力。',payment:'月付，每月 1 日前',shipterm:'不適用',validity:'2026-01-01 至 2028-12-31',
+  pipeline:{fin:'active',legal:'active',mgr:'pending'},
+  file:{name:'Warehouse_Lease_Agreement.pdf',size:'1.5 MB',updated:'2025-04-20'}},
+
+  {id:'CT-2025-010',name:'跨境電商合作協議',bu:'業務發展部',type:'合作協議',status:'退回',vendor:'Shopee TW',due:'2025-10-31',days:143,margin:'27%',total:'NT$ 9,200,000',desc:'與 Shopee 台灣就跨境商品銷售合作，含平台費率、物流整合及消費者退換貨處理條款，尚待修訂。',payment:'T+7 撥款，扣除平台服務費',shipterm:'賣方出貨至 Shopee 集貨倉',validity:'2025-11-01 至 2026-10-31',
+  pipeline:{fin:'fail',legal:'done',mgr:'pending',finMsg:'金額條款異常（第 5 條），請修正後重送'},
+  file:{name:'Shopee_CrossBorder_Agreement_v3.pdf',size:'3.3 MB',updated:'2025-06-09'}},
+
+  {id:'CT-2025-011',name:'IT 外包維護合約',bu:'科技事業部',type:'服務合約',status:'退回',vendor:'緯創軟體',due:'2025-07-30',days:49,margin:'23%',total:'NT$ 1,800,000',desc:'公司內部 ERP 及 HR 系統維護外包服務，含 24/7 On-call 支援及每季系統健診，附件資料待補。',payment:'每季預付',shipterm:'不適用',validity:'2025-08-01 至 2026-07-31',
+  pipeline:{fin:'done',legal:'fail',mgr:'pending',legalMsg:'合約附件未附，條款第 7.3 條需補充說明'},
+  file:{name:'Wistron_IT_Maintenance_v2.pdf',size:'1.1 MB',updated:'2025-06-07'}},
+
+  {id:'CT-2025-012',name:'醫療器材採購合約',bu:'醫療事業部',type:'採購合約',status:'退回',vendor:'台積化學',due:'2025-06-30',days:19,margin:'20%',total:'NT$ 2,100,000',desc:'Q2 醫療級耗材採購，含手術用消毒劑、檢驗試劑等，需符合 ISO 13485 及 TFDA 認證。',payment:'貨到驗收後 Net 30',shipterm:'CIF 台中港',validity:'2025-04-01 至 2025-06-30',
+  pipeline:{fin:'fail',legal:'fail',mgr:'pending',finMsg:'採購金額超出預算上限，需重新議價',legalMsg:'供應商醫療器材資格文件不齊全'},
+  file:{name:'Medical_Equipment_Q2.pdf',size:'0.8 MB',updated:'2025-03-28'}},
+];
+const statusClass={財務審閱中:'fin',法務審閱中:'legal',退回:'ret',已完成:'done',待簽核:'pend'};
+
+function renderTable(){
+  const bu=document.getElementById('f-bu').value,st=document.getElementById('f-status').value;
+  const ty=document.getElementById('f-type').value,kw=document.getElementById('f-kw').value.toLowerCase();
+  const rows=contracts.filter(c=>(!bu||c.bu===bu)&&(!st||c.status===st)&&(!ty||c.type===ty)&&(!kw||c.name.toLowerCase().includes(kw)));
+  document.getElementById('contract-tbody').innerHTML=rows.map(c=>`<tr onclick="selectContract('${c.id}')" style="cursor:pointer">
+    <td style="font-family:'SF Mono',monospace;font-size:11px;color:var(--text-3)">${c.id}</td>
+    <td style="font-weight:500;color:var(--blue)">${c.name}</td>
+    <td style="color:var(--text-2)">${c.bu}</td>
+    <td style="color:var(--text-2)">${c.type}</td>
+    <td><span class="badge ${statusClass[c.status]}">${c.status}</span></td>
+    <td style="color:var(--text-2)">${c.vendor}</td>
+    <td style="${c.days<=14?'color:var(--red);font-weight:600':c.days<=30?'color:var(--amber);font-weight:500':''}">${c.due}</td>
+    <td style="${c.days<=14?'color:var(--red);font-weight:600':c.days<=30?'color:var(--amber);font-weight:500':''}">${c.days}天</td>
+  </tr>`).join('');
+}
+renderTable();
+
+function selectContract(id){
+  document.getElementById('search-input').value=id;
+  doSearch();
+  const wrap=document.querySelector('.search-wrap');
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  wrap.style.transition='box-shadow .3s';
+  wrap.style.boxShadow='0 0 0 3px rgba(190,0,40,.18), 0 4px 12px rgba(0,0,0,.06)';
+  setTimeout(()=>{wrap.style.boxShadow=''},1200);
+}
+
+function pipelineHTML(pl){
+  const SC={done:'#16a34a',active:'#be0028',feedback:'#d97706',fail:'#dc2626',pending:'#9ca3af'};
+  const SB={done:'#f0fdf4',active:'#fdf0f3',feedback:'#fffbeb',fail:'#fef2f2',pending:'#f9fafb'};
+  const SL={done:'已通過',active:'審閱中',feedback:'Feedback',fail:'已退回',pending:'待進行'};
+  const SI={done:'✓',active:'·',feedback:'!',fail:'✕',pending:'–'};
+
+  const W=620,H=220;
+  const appX=60,appY=110,forkX=155;
+  const finX=285,finY=58,legalX=285,legalY=162;
+  const mergeX=390,mgrX=490,mgrY=110;
+
+  const lc=(st)=>st==='done'?'#16a34a':st==='active'?'#be0028':st==='feedback'?'#d97706':st==='fail'?'#dc2626':'#e2e8f0';
+  const mergeC=(pl.fin==='done'&&pl.legal==='done')?'#16a34a':(pl.fin==='fail'||pl.legal==='fail')?'#dc2626':'#e2e8f0';
+
+  function node(cx,cy,st,line1,line2){
+    const c=SC[st],bg=SB[st],ic=SI[st],lb=SL[st];
+    const isActive=st==='active';
+    return `<g>
+      <rect x="${cx-48}" y="${cy-21}" width="96" height="42" rx="8"
+        fill="${bg}" stroke="${c}" stroke-width="${isActive?2:1.5}" opacity="${st==='pending'?.5:1}"/>
+      <text x="${cx}" y="${cy-5}" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="11.5" font-weight="600"
+        fill="${st==='pending'?'#9ca3af':c}">${line1}</text>
+      <text x="${cx}" y="${cy+10}" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="400"
+        fill="${st==='pending'?'#9ca3af':c}">${lb}</text>
+      <circle cx="${cx+38}" cy="${cy-15}" r="8" fill="${c}" opacity="${st==='pending'?.4:1}"/>
+      <text x="${cx+38}" y="${cy-11}" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="9.5" font-weight="700" fill="white">${ic}</text>
+    </g>`;
+  }
+
+  function feedbackArrow(fromX,fromY,color,label){
+    const ay=fromY<110?28:192;
+    return `<g opacity="${color==='#e2e8f0'?.3:1}">
+      <path d="M${fromX-48},${fromY} Q${fromX-48},${ay} ${appX+48},${ay} L${appX+48},${appY+(fromY<110?-21:21)}"
+        fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="4 3"
+        marker-end="url(#arr-${color.replace('#','')})"/>
+      <rect x="${(fromX-48+appX+48)/2-26}" y="${ay-9}" width="52" height="16" rx="4" fill="${SB[pl.fin==='feedback'||pl.legal==='feedback'?'feedback':'fail']}" opacity=".9"/>
+      <text x="${(fromX-48+appX+48)/2}" y="${ay+3}" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="9.5" font-weight="500" fill="${color}">${label}</text>
+    </g>`;
+  }
+
+  const markers=['#16a34a','#be0028','#d97706','#dc2626','#e2e8f0'].map(c=>`
+    <marker id="arr-${c.replace('#','')}" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M1 1L7 4L1 7" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>`).join('');
+
+  const finHasFeedback=pl.fin==='feedback',legalHasFeedback=pl.legal==='feedback';
+  const finHasFail=pl.fin==='fail',legalHasFail=pl.legal==='fail';
+
+  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin:0 auto">
+    <defs>${markers}</defs>
+    <line x1="${appX+48}" y1="${appY}" x2="${forkX}" y2="${appY}" stroke="#e2e8f0" stroke-width="1.5" marker-end="url(#arr-e2e8f0)"/>
+    <circle cx="${forkX}" cy="${appY}" r="5" fill="#cbd5e1"/>
+    <polyline points="${forkX},${appY} ${forkX},${finY} ${finX-48},${finY}" fill="none" stroke="${lc(pl.fin)}" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arr-${lc(pl.fin).replace('#','')})"/>
+    <polyline points="${forkX},${appY} ${forkX},${legalY} ${legalX-48},${legalY}" fill="none" stroke="${lc(pl.legal)}" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arr-${lc(pl.legal).replace('#','')})"/>
+    <polyline points="${finX+48},${finY} ${mergeX},${finY} ${mergeX},${appY}" fill="none" stroke="${lc(pl.fin)}" stroke-width="1.5" stroke-linejoin="round"/>
+    <polyline points="${legalX+48},${legalY} ${mergeX},${legalY} ${mergeX},${appY}" fill="none" stroke="${lc(pl.legal)}" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="${mergeX}" cy="${appY}" r="5" fill="${mergeC}"/>
+    <line x1="${mergeX}" y1="${appY}" x2="${mgrX-48}" y2="${mgrY}" stroke="${mergeC}" stroke-width="1.5" marker-end="url(#arr-${mergeC.replace('#','')})"/>
+    ${finHasFeedback ? feedbackArrow(finX,finY,SC.feedback,'Feedback') : ''}
+    ${legalHasFeedback ? feedbackArrow(legalX,legalY,SC.feedback,'Feedback') : ''}
+    ${finHasFail ? feedbackArrow(finX,finY,SC.fail,'退回') : ''}
+    ${legalHasFail ? feedbackArrow(legalX,legalY,SC.fail,'退回') : ''}
+    ${node(appX,appY,'done','申請人','提交')}
+    ${node(finX,finY,pl.fin,'財務審閱','Finance')}
+    ${node(legalX,legalY,pl.legal,'法務審閱','Legal')}
+    ${node(mgrX,mgrY,pl.mgr,'部門負責人','Approval')}
+    <text x="${(finX+legalX)/2+2}" y="${(finY+legalY)/2+4}" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#cbd5e1">同步</text>
+  </svg>`;
+
+  let notes='';
+  const msgs=[];
+  if(pl.finMsg) msgs.push(`<strong>財務：</strong>${pl.finMsg}`);
+  if(pl.legalMsg) msgs.push(`<strong>法務：</strong>${pl.legalMsg}`);
+  if(msgs.length) notes=`<div class="fail-msg" style="margin-top:6px">${msgs.join('<br>')}</div>`;
+  return svg+notes;
+}
+
+const cMap={};
+contracts.forEach(c=>cMap[c.id.toLowerCase()]=c);
+
+function doSearch(){
+  const q=document.getElementById('search-input').value.trim().toLowerCase();
+  const box=document.getElementById('detail-box'),nf=document.getElementById('not-found');
+  box.style.display='none';nf.style.display='none';box.innerHTML='';
+  if(!q)return;
+  const c=cMap[q];
+  if(!c){nf.style.display='block';return;}
+
+  const needApproval=c.pipeline.mgr==='active';
+  const isCompleted=c.pipeline.mgr==='done';
+  const isRejected=c.pipeline.fin==='fail'||c.pipeline.legal==='fail';
+  const hasFeedback=c.pipeline.fin==='feedback'||c.pipeline.legal==='feedback';
+  const isReviewing=c.pipeline.fin==='active'||c.pipeline.legal==='active';
+
+  let approvalHTML='';
+  if(needApproval){
+    approvalHTML=`
+    <div class="approval-bar" id="abar-${c.id}">
+      <div class="al-info">
+        <div class="al-title">部門負責人簽核</div>
+        <div class="al-sub">財務及法務審閱均已通過，請選擇簽核結果</div>
+      </div>
+      <div class="approval-select-wrap">
+        <select class="approval-select" id="asel-${c.id}" onchange="onApprovalSelect('${c.id}')">
+          <option value="">選擇簽核結果…</option>
+          <option value="pass">✓ 通過</option>
+          <option value="reject">✕ 退回</option>
+        </select>
+      </div>
+    </div>
+    <div class="reject-area" id="rej-${c.id}">
+      <div style="font-size:11.5px;color:var(--text-2);margin-bottom:6px;font-weight:500">退回原因</div>
+      <textarea rows="3" placeholder="請填寫退回原因，將通知申請人..." id="rr-${c.id}"></textarea>
+      <div class="ra-actions">
+        <button class="ra-cancel" onclick="cancelReject('${c.id}')">取消</button>
+        <button class="ra-confirm" onclick="doApprove('${c.id}','reject')">確認退回</button>
+      </div>
+    </div>
+    <div class="confirm-pass" id="cp-${c.id}">
+      <div style="font-size:12.5px;color:#15803d;margin-bottom:8px">確定通過此合約簽核？簽核後將通知申請人並完成歸檔。</div>
+      <div class="ra-actions">
+        <button class="ra-cancel" onclick="cancelPass('${c.id}')">取消</button>
+        <button class="ra-pass" onclick="doApprove('${c.id}','pass')">確認通過</button>
+      </div>
+    </div>`;
+  } else if(isCompleted){
+    approvalHTML=`
+    <div class="approval-bar" style="background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border-color:#86efac">
+      <div class="al-info">
+        <div class="al-title" style="color:#15803d">✓ 已核簽完成</div>
+        <div class="al-sub" style="color:#22c55e">此合約已完成部門負責人簽核</div>
+      </div>
+    </div>`;
+  } else if(isRejected){
+    approvalHTML=`
+    <div class="approval-bar" style="background:linear-gradient(135deg,#fef2f2 0%,#fff1f2 100%);border-color:#fca5a5">
+      <div class="al-info">
+        <div class="al-title" style="color:#b91c1c">合約已退回</div>
+        <div class="al-sub" style="color:#dc2626">尚未達到部門負責人簽核階段，請申請人依退回原因修正後重送</div>
+      </div>
+    </div>`;
+  } else if(hasFeedback){
+    approvalHTML=`
+    <div class="approval-bar" style="background:linear-gradient(135deg,#fffbeb 0%,#fefce8 100%);border-color:#fcd34d">
+      <div class="al-info">
+        <div class="al-title" style="color:#b45309">等待申請人回覆 Feedback</div>
+        <div class="al-sub" style="color:#d97706">財務或法務已提出修改建議，回覆後將重新進入審閱流程</div>
+      </div>
+    </div>`;
+  } else if(isReviewing){
+    approvalHTML=`
+    <div class="approval-bar" style="background:var(--surface2);border-color:var(--border-md)">
+      <div class="al-info">
+        <div class="al-title" style="color:var(--text-2)">尚未進入部門負責人簽核</div>
+        <div class="al-sub">財務或法務審閱尚未完成，雙邊通過後將自動通知部門負責人</div>
+      </div>
+    </div>`;
+  }
+
+  const marginPos=c.margin!=='N/A'&&parseFloat(c.margin)>=25;
+  box.innerHTML=`
+    <div class="d-top">
+      <div>
+        <div class="d-id">${c.id}</div>
+        <div class="d-name">${c.name}</div>
+        <div class="d-meta">${c.bu} &nbsp;·&nbsp; ${c.vendor}</div>
+      </div>
+      <span class="badge ${statusClass[c.status]}">${c.status}</span>
+    </div>
+    <div class="d-grid">
+      <div class="dg"><div class="dg-l">總價</div><div class="dg-v">${c.total}</div></div>
+      <div class="dg"><div class="dg-l">Margin</div><div class="dg-v${marginPos?' pos':''}">${c.margin}</div></div>
+      <div class="dg"><div class="dg-l">合約類型</div><div class="dg-v">${c.type}</div></div>
+      <div class="dg"><div class="dg-l">Payment Term</div><div class="dg-v" style="font-size:12.5px;font-weight:500">${c.payment}</div></div>
+      <div class="dg"><div class="dg-l">Ship Term</div><div class="dg-v" style="font-size:12.5px;font-weight:500">${c.shipterm}</div></div>
+      <div class="dg"><div class="dg-l">有效期限</div><div class="dg-v" style="font-size:12.5px;font-weight:500">${c.validity}</div></div>
+    </div>
+    <div class="d-desc"><div class="dl">合約概述</div>${c.desc}</div>
+    <div class="file-card">
+      <div class="file-lhs">
+        <div class="file-ico">📄</div>
+        <div><div class="file-name">${c.file.name}</div><div class="file-meta">${c.file.size} · 更新 ${c.file.updated}</div></div>
+      </div>
+      <button class="dl-btn">↓ 下載</button>
+    </div>
+    <div class="flow-toggle" id="ftog-${c.id}" onclick="toggleFlow('${c.id}')">
+      <span class="ft-arrow">▶</span>&nbsp; 查看審核流程狀態
+    </div>
+    <div class="pipeline" id="pipe-${c.id}"><div class="pipe-inner">${pipelineHTML(c.pipeline)}</div></div>
+    ${approvalHTML}
+  `;
+  box.style.display='block';
+}
+
+function toggleFlow(id){
+  document.getElementById('ftog-'+id).classList.toggle('open');
+  document.getElementById('pipe-'+id).classList.toggle('open');
+}
+function cancelReject(id){
+  document.getElementById('rej-'+id).style.display='none';
+  const sel=document.getElementById('asel-'+id);if(sel)sel.value='';
+}
+function cancelPass(id){
+  document.getElementById('cp-'+id).style.display='none';
+  const sel=document.getElementById('asel-'+id);if(sel)sel.value='';
+}
+function onApprovalSelect(id){
+  const v=document.getElementById('asel-'+id).value;
+  const rej=document.getElementById('rej-'+id);
+  const cp=document.getElementById('cp-'+id);
+  if(rej)rej.style.display='none';
+  if(cp)cp.style.display='none';
+  if(v==='pass'&&cp)cp.style.display='block';
+  else if(v==='reject'&&rej)rej.style.display='block';
+}
+function doApprove(id,type){
+  document.getElementById('abar-'+id).style.display='none';
+  const rej=document.getElementById('rej-'+id);if(rej)rej.style.display='none';
+  const cp=document.getElementById('cp-'+id);if(cp)cp.style.display='none';
+  const t=document.getElementById('toast');
+  t.textContent=type==='pass'?'✓ 已核簽通過，申請人將收到通知':'✕ 已退回，申請人將收到通知';
+  t.className='toast show '+(type==='pass'?'pass':'reject');
+  setTimeout(()=>t.className='toast',2800);
+}
+</script>
+</body>
+</html>
